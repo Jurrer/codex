@@ -328,6 +328,10 @@ impl ModelsEndpointClient for OpenAiModelsEndpoint {
         supports_gateway_catalog(&self.provider_info)
     }
 
+    fn has_explicit_model_catalog(&self) -> bool {
+        self.provider_info.model_catalog_url.is_some()
+    }
+
     fn uses_api_key_auth(&self, login: Option<codex_protocol::auth::AuthMode>) -> bool {
         self.has_provider_api_key()
             || (login == Some(codex_protocol::auth::AuthMode::ApiKey)

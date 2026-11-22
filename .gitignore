@@ -94,3 +94,9 @@ CHANGELOG.ignore.md
 # Python bytecode files
 __pycache__/
 *.pyc
+
+# graft's local repository settings — not committed.
+/.graft/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

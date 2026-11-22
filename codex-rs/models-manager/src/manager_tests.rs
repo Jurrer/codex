@@ -100,6 +100,7 @@ fn assert_models_contain(actual: &[ModelInfo], expected: &[ModelInfo]) {
 struct TestModelsEndpoint {
     has_command_auth: bool,
     uses_codex_backend: bool,
+    has_explicit_model_catalog: bool,
     responses: Mutex<VecDeque<CoreResult<Vec<ModelInfo>>>>,
     etag: Option<String>,
     fetch_count: AtomicUsize,
@@ -284,6 +285,10 @@ impl ExternalAuth for TestUnresolvedExternalApiKeyAuth {
 impl ModelsEndpointClient for TestModelsEndpoint {
     fn supports_api_key_models(&self) -> bool {
         true
+    }
+
+    fn has_explicit_model_catalog(&self) -> bool {
+        self.has_explicit_model_catalog
     }
 
     fn identity(&self) -> Option<String> {
