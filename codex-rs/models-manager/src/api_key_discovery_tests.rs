@@ -114,3 +114,25 @@ async fn api_key_discovery_flag_controls_fetches_and_cached_catalogs() {
     }
     assert_eq!(endpoint.fetch_count(), 1);
 }
+
+#[tokio::test]
+async fn explicit_model_catalog_ignores_api_key_discovery_opt_out() {
+    let models = vec![remote_model("explicit-catalog", "Explicit Catalog", /*priority*/ 0)];
+    let endpoint = Arc::new(TestModelsEndpoint {
+        has_explicit_model_catalog: true,
+        responses: Mutex::new(vec![Ok(models.clone())].into()),
+        ..TestModelsEndpoint::default()
+    });
+    let auth = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test-key"));
+    let manager = OpenAiModelsManager::new_without_cache(endpoint.clone(), Some(auth));
+    manager.set_api_key_model_discovery_enabled(/*enabled*/ false);
+
+    assert_eq!(
+        manager
+            .raw_model_catalog(RefreshStrategy::Online, DEFAULT_HTTP_CLIENT_FACTORY)
+            .await
+            .models,
+        models
+    );
+    assert_eq!(endpoint.fetch_count(), 1);
+}

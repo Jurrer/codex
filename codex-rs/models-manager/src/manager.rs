@@ -84,6 +84,11 @@ pub trait ModelsEndpointClient: fmt::Debug + Send + Sync {
         false
     }
 
+    /// Whether the provider configuration explicitly selects a remote model catalog.
+    fn has_explicit_model_catalog(&self) -> bool {
+        false
+    }
+
     /// Determines whether this provider uses API key auth to fetch the model catalog.
     fn uses_api_key_auth(&self, login: Option<AuthMode>) -> bool {
         self.has_provider_api_key() || login == Some(AuthMode::ApiKey)
@@ -939,7 +944,8 @@ impl OpenAiModelsManager {
 
     // A runtime opt-out must hide catalogs fetched before the flag was disabled, too.
     fn api_key_discovery_disabled(&self) -> bool {
-        self.uses_api_key_auth()
+        !self.endpoint_client.has_explicit_model_catalog()
+            && self.uses_api_key_auth()
             && !self.endpoint_client.has_command_auth()
             && (!self.endpoint_client.supports_api_key_models()
                 || !self.settings.api_key_model_discovery_enabled())
@@ -954,7 +960,8 @@ impl OpenAiModelsManager {
     }
 
     async fn should_refresh_models(&self) -> bool {
-        self.endpoint_client.supports_gateway_catalog()
+        self.endpoint_client.has_explicit_model_catalog()
+            || self.endpoint_client.supports_gateway_catalog()
             || self.endpoint_client.uses_codex_backend().await
             || self.endpoint_client.has_command_auth()
             || self.supports_api_key_discovery()
@@ -980,7 +987,8 @@ impl OpenAiModelsManager {
             .models
             .iter()
             .any(|model| model.visibility == ModelVisibility::List)
-            && (self.supports_api_key_discovery()
+            && (self.endpoint_client.has_explicit_model_catalog()
+                || self.supports_api_key_discovery()
                 || self.auth_manager.as_ref().is_some_and(|auth_manager| {
                     auth_manager
                         .auth_mode()
